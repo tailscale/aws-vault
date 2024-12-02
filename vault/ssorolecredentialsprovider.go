@@ -35,14 +35,15 @@ type OIDCTokenCacher interface {
 
 // SSORoleCredentialsProvider creates temporary credentials for an SSO Role.
 type SSORoleCredentialsProvider struct {
-	OIDCClient     *ssooidc.Client
-	OIDCTokenCache OIDCTokenCacher
-	StartURL       string
-	SSOClient      *sso.Client
-	AccountID      string
-	RoleName       string
-	UseStdout      bool
-	UseDeviceCode  bool
+	OIDCClient         *ssooidc.Client
+	OIDCTokenCache     OIDCTokenCacher
+	StartURL           string
+	SSOClient          *sso.Client
+	AccountID          string
+	RoleName           string
+	UseStdout          bool
+	UseDeviceCode      bool
+	CallbackServerPort int
 }
 
 func millisecondsTimeValue(v int64) time.Time {
@@ -240,7 +241,7 @@ func (p *SSORoleCredentialsProvider) newOIDCTokenPKCE(ctx context.Context) (*sso
 	log.Printf("Created new OIDC client (expires at: %s)", time.Unix(clientCreds.ClientSecretExpiresAt, 0))
 
 	// start the callback server
-	cbServer, err := newOauthCallbackServer()
+	cbServer, err := newOauthCallbackServer(p.CallbackServerPort)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create oauthCallbackServer: %w", err)
 	}
@@ -324,12 +325,21 @@ func (p *SSORoleCredentialsProvider) openOrPrintURL(url string) {
 	}
 }
 
-// newOauthCallbackServer creates a HTTP server listening on a random localhost
-// port to serve the OAuth2 callback. It serves a single oauth callback endpoint
-// and sends the authorization code received via a channel.
-func newOauthCallbackServer() (*oauthCallbackServer, error) {
-	// select a random port for the callback server
-	ln, err := net.Listen("tcp", ":0")
+// newOauthCallbackServer creates a HTTP server listing on localhost to serve
+// the OAuth2 callback. It serves a single oauth callback endpoint and sends the
+// authorization code received via a channel. It listens on the specified port,
+// and chooses at random if none is provided.
+func newOauthCallbackServer(port int) (*oauthCallbackServer, error) {
+	var ln net.Listener
+	var err error
+
+	// use the specified port if provided
+	if port > 0 {
+		ln, err = net.Listen("tcp", fmt.Sprintf(":%d", port))
+	} else {
+		// select a random port for the callback server
+		ln, err = net.Listen("tcp", ":0")
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create listener: %w", err)
 	}

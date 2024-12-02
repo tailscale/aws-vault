@@ -22,19 +22,20 @@ import (
 )
 
 type ExecCommandInput struct {
-	ProfileName      string
-	Command          string
-	Args             []string
-	StartEc2Server   bool
-	StartEcsServer   bool
-	Lazy             bool
-	JSONDeprecated   bool
-	Config           vault.ProfileConfig
-	SessionDuration  time.Duration
-	NoSession        bool
-	UseStdout        bool
-	UseDeviceCode    bool
-	ShowHelpMessages bool
+	ProfileName        string
+	Command            string
+	Args               []string
+	StartEc2Server     bool
+	StartEcsServer     bool
+	Lazy               bool
+	JSONDeprecated     bool
+	Config             vault.ProfileConfig
+	SessionDuration    time.Duration
+	NoSession          bool
+	UseStdout          bool
+	UseDeviceCode      bool
+	ShowHelpMessages   bool
+	CallbackServerPort int
 }
 
 func (input ExecCommandInput) validate() error {
@@ -108,8 +109,12 @@ func ConfigureExecCommand(app *kingpin.Application, a *AwsVault) {
 	cmd.Flag("stdout", "Print the SSO link to the terminal without automatically opening the browser").
 		BoolVar(&input.UseStdout)
 
-	cmd.Flag("device-code", "Use the device-code OAuth2 flow for SSO instead of the default PKCE browser flow").
+	cmd.Flag("device-code", "Use the device-code OAuth2 flow for SSO instead of the default PKCE authorization code browser flow").
 		BoolVar(&input.UseDeviceCode)
+
+	cmd.Flag("oauth-callback-port", "Force the use of the specified port for the OAuth2 callback server instead of choosing one at random").
+		Envar("AWS_VAULT_OAUTH_CALLBACK_PORT").
+		IntVar(&input.CallbackServerPort)
 
 	cmd.Arg("profile", "Name of the profile").
 		Required().
@@ -128,6 +133,7 @@ func ConfigureExecCommand(app *kingpin.Application, a *AwsVault) {
 		input.Config.AssumeRoleDuration = input.SessionDuration
 		input.Config.SSOUseStdout = input.UseStdout
 		input.Config.SSOUseDeviceCode = input.UseDeviceCode
+		input.Config.SSOCallbackServerPort = input.CallbackServerPort
 		input.ShowHelpMessages = !a.Debug && input.Command == "" && isATerminal() && os.Getenv("AWS_VAULT_DISABLE_HELP_MESSAGE") != "1"
 
 		f, err := a.AwsConfigFile()

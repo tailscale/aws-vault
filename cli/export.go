@@ -17,13 +17,14 @@ import (
 )
 
 type ExportCommandInput struct {
-	ProfileName     string
-	Format          string
-	Config          vault.ProfileConfig
-	SessionDuration time.Duration
-	NoSession       bool
-	UseStdout       bool
-	UseDeviceCode   bool
+	ProfileName       string
+	Format            string
+	Config            vault.ProfileConfig
+	SessionDuration   time.Duration
+	NoSession         bool
+	UseStdout         bool
+	UseDeviceCode     bool
+	OauthCallbackPort int
 }
 
 var (
@@ -63,6 +64,10 @@ func ConfigureExportCommand(app *kingpin.Application, a *AwsVault) {
 	cmd.Flag("device-code", "Use the device-code OAuth2 flow for SSO instead of the default PKCE browser flow").
 		BoolVar(&input.UseDeviceCode)
 
+	cmd.Flag("oauth-callback-port", "Force the use of the specified port for the oauth2 callback server instead of choosing at random").
+		Envar("AWS_VAULT_OAUTH_CALLBACK_PORT").
+		IntVar(&input.OauthCallbackPort)
+
 	cmd.Arg("profile", "Name of the profile").
 		Required().
 		HintAction(a.MustGetProfileNames).
@@ -74,6 +79,7 @@ func ConfigureExportCommand(app *kingpin.Application, a *AwsVault) {
 		input.Config.AssumeRoleDuration = input.SessionDuration
 		input.Config.SSOUseStdout = input.UseStdout
 		input.Config.SSOUseDeviceCode = input.UseDeviceCode
+		input.Config.SSOCallbackServerPort = input.OauthCallbackPort
 
 		f, err := a.AwsConfigFile()
 		if err != nil {
