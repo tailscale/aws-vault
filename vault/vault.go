@@ -141,20 +141,14 @@ func NewAssumeRoleWithWebIdentityProvider(k keyring.Keyring, config *ProfileConf
 func NewSSORoleCredentialsProvider(k keyring.Keyring, config *ProfileConfig, useSessionCache bool) (aws.CredentialsProvider, error) {
 	cfg := NewAwsConfig(config.SSORegion, config.STSRegionalEndpoints)
 
-	// If we're in an SSH session, we can't use the browser for SSO so we print
-	// the URLs to stdout instead.
-	useStdout := config.SSOUseStdout
-	if os.Getenv("SSH_CONNECTION") != "" {
-		useStdout = true
-	}
-
 	ssoRoleCredentialsProvider := &SSORoleCredentialsProvider{
-		OIDCClient: ssooidc.NewFromConfig(cfg),
-		StartURL:   config.SSOStartURL,
-		SSOClient:  sso.NewFromConfig(cfg),
-		AccountID:  config.SSOAccountID,
-		RoleName:   config.SSORoleName,
-		UseStdout:  useStdout,
+		OIDCClient:    ssooidc.NewFromConfig(cfg),
+		StartURL:      config.SSOStartURL,
+		SSOClient:     sso.NewFromConfig(cfg),
+		AccountID:     config.SSOAccountID,
+		RoleName:      config.SSORoleName,
+		UseStdout:     config.SSOUseStdout,
+		UseDeviceCode: config.SSOUseDeviceCode,
 	}
 
 	if useSessionCache {

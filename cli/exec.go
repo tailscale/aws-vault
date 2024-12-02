@@ -33,6 +33,7 @@ type ExecCommandInput struct {
 	SessionDuration  time.Duration
 	NoSession        bool
 	UseStdout        bool
+	UseDeviceCode    bool
 	ShowHelpMessages bool
 }
 
@@ -107,6 +108,9 @@ func ConfigureExecCommand(app *kingpin.Application, a *AwsVault) {
 	cmd.Flag("stdout", "Print the SSO link to the terminal without automatically opening the browser").
 		BoolVar(&input.UseStdout)
 
+	cmd.Flag("device-code", "Use the device-code OAuth2 flow for SSO instead of the default PKCE browser flow").
+		BoolVar(&input.UseDeviceCode)
+
 	cmd.Arg("profile", "Name of the profile").
 		Required().
 		HintAction(a.MustGetProfileNames).
@@ -123,6 +127,7 @@ func ConfigureExecCommand(app *kingpin.Application, a *AwsVault) {
 		input.Config.NonChainedGetSessionTokenDuration = input.SessionDuration
 		input.Config.AssumeRoleDuration = input.SessionDuration
 		input.Config.SSOUseStdout = input.UseStdout
+		input.Config.SSOUseDeviceCode = input.UseDeviceCode
 		input.ShowHelpMessages = !a.Debug && input.Command == "" && isATerminal() && os.Getenv("AWS_VAULT_DISABLE_HELP_MESSAGE") != "1"
 
 		f, err := a.AwsConfigFile()
