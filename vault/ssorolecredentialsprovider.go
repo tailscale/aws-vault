@@ -268,7 +268,7 @@ func (p *SSORoleCredentialsProvider) newOIDCTokenPKCE(ctx context.Context) (*sso
 	if p.OIDCClient.Options().BaseEndpoint != nil && *p.OIDCClient.Options().BaseEndpoint != "" {
 		host = *p.OIDCClient.Options().BaseEndpoint
 	} else {
-		host = "oidc.us-east-1.amazonaws.com"
+		host = fmt.Sprintf("oidc.%s.amazonaws.com", p.OIDCClient.Options().Region)
 	}
 	authorizeURL := url.URL{
 		Scheme:   "https",
